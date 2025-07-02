@@ -6,6 +6,7 @@ import { createChart, ColorType } from "lightweight-charts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
+import { Moon, Sun } from 'lucide-react';
 
 // Dynamically import Joyride with SSR disabled
 const Joyride = dynamic(() => import('react-joyride'), { ssr: false });
@@ -32,9 +33,35 @@ function CEXSecuritySimulationComponent() {
   const [showInsufficientBalance, setShowInsufficientBalance] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
+  // Theme state - dark mode as default
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
   // Tour state
   const [runTour, setRunTour] = useState(false);
   const [tourKey, setTourKey] = useState(0);
+
+  // Load theme preference from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('cex-theme');
+    if (savedTheme) {
+      setIsDarkMode(savedTheme === 'dark');
+    }
+  }, []);
+
+  // Save theme preference and apply to document
+  useEffect(() => {
+    localStorage.setItem('cex-theme', isDarkMode ? 'dark' : 'light');
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  // Theme toggle function
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   // Tour steps configuration
   const tourSteps = [
@@ -54,6 +81,20 @@ function CEXSecuritySimulationComponent() {
       ),
       placement: 'center' as const,
       disableBeacon: true,
+    },
+    {
+      target: '.tour-theme-toggle',
+      content: (
+        <div>
+          <h3 className="text-lg font-bold mb-2">Theme Toggle 🌙☀️</h3>
+          <p>Switch between dark and light mode for comfortable viewing during the simulation.</p>
+          <div className="mt-2 space-y-1 text-sm">
+            <p>🌙 <strong>Dark Mode:</strong> Easy on the eyes</p>
+            <p>☀️ <strong>Light Mode:</strong> Classic bright interface</p>
+            <p>💾 <strong>Persistent:</strong> Your preference is saved</p>
+          </div>
+        </div>
+      ),
     },
     {
       target: '.tour-balance',
@@ -215,14 +256,17 @@ function CEXSecuritySimulationComponent() {
 
     const chart = createChart(chartRef.current, {
       layout: {
-        background: { color: "#ffffff", type: ColorType.Solid },
-        textColor: "#1f2937",
+        background: { 
+          color: isDarkMode ? "#1f2937" : "#ffffff", 
+          type: ColorType.Solid 
+        },
+        textColor: isDarkMode ? "#e5e7eb" : "#1f2937",
       },
       width: 800,
       height: 400,
       grid: {
-        vertLines: { color: "#f3f4f6" },
-        horzLines: { color: "#f3f4f6" },
+        vertLines: { color: isDarkMode ? "#374151" : "#f3f4f6" },
+        horzLines: { color: isDarkMode ? "#374151" : "#f3f4f6" },
       },
     });
 
@@ -262,7 +306,7 @@ function CEXSecuritySimulationComponent() {
     chart.timeScale().fitContent();
 
     return () => chart.remove();
-  }, []);
+  }, [isDarkMode]);
 
   // Fixed draining logic: trigger final message when balance reaches 0
   useEffect(() => {
@@ -317,7 +361,9 @@ function CEXSecuritySimulationComponent() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className={`min-h-screen p-6 transition-colors duration-300 ${
+      isDarkMode ? 'bg-gray-900' : 'bg-white'
+    }`}>
       {/* Tour Component */}
       <Joyride
         key={tourKey}
@@ -330,10 +376,10 @@ function CEXSecuritySimulationComponent() {
         styles={{
           options: {
             arrowColor: "#ec4899",
-            backgroundColor: "#ec4899",
+            backgroundColor: isDarkMode ? "#1f2937" : "#ec4899",
             overlayColor: "rgba(236, 72, 153, 0.3)",
             primaryColor: "#ec4899",
-            textColor: "#fff",
+            textColor: isDarkMode ? "#e5e7eb" : "#fff",
             width: 380,
             zIndex: 1000,
           },
@@ -352,31 +398,70 @@ function CEXSecuritySimulationComponent() {
       />
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-lg p-4 mb-6 tour-welcome">
+      <div className={`border rounded-lg p-4 mb-6 tour-welcome transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gradient-to-r from-pink-900/20 to-rose-900/20 border-pink-700' 
+          : 'bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200'
+      }`}>
         <div className="flex justify-between items-center">
           <div className="tour-educational-purpose">
-            <h1 className="text-2xl font-bold text-gray-900">CryptoExchange Pro</h1>
-            <p className="text-gray-600">Professional Trading Platform</p>
+            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              CryptoExchange Pro
+            </h1>
+            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+              Professional Trading Platform
+            </p>
             <div className="mt-2 space-y-1">
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-red-400">
                 <strong>⚠️ Security Simulation:</strong> Experience CEX vulnerability
               </p>
-              <p className="text-xs text-gray-500">
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 Educational demonstration of exchange security risks
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* Theme Toggle Button */}
+            <Button
+              onClick={toggleTheme}
+              variant="ghost"
+              size="sm"
+              className={`tour-theme-toggle p-2 rounded-lg transition-colors ${
+                isDarkMode 
+                  ? 'hover:bg-gray-700 text-gray-300 hover:text-white' 
+                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <motion.div
+                initial={false}
+                animate={{ rotate: isDarkMode ? 0 : 180 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
+              </motion.div>
+            </Button>
             <Button
               onClick={startTour}
               className="tour-help-button bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105"
             >
               🆘 Start Tour
             </Button>
-            <div className="text-right bg-white rounded-lg p-3 border border-pink-200 tour-balance">
-              <p className="text-sm text-gray-600">Total Balance</p>
-              <p className="text-xl font-bold text-gray-900">${balance.toLocaleString()}</p>
-              <div className="text-xs text-gray-500 mt-1">
+            <div className={`text-right rounded-lg p-3 border tour-balance transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-gray-800 border-pink-700' 
+                : 'bg-white border-pink-200'
+            }`}>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Total Balance
+              </p>
+              <p className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                ${balance.toLocaleString()}
+              </p>
+              <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 🏦 Held by Exchange
               </div>
             </div>
@@ -387,14 +472,22 @@ function CEXSecuritySimulationComponent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart Section */}
         <div className="lg:col-span-2">
-          <Card className="border-pink-200 tour-price-chart">
-            <CardHeader className="bg-pink-50 border-b border-pink-200">
-              <CardTitle className="text-xl text-gray-900">SOL/USDT</CardTitle>
+          <Card className={`tour-price-chart transition-colors duration-300 ${
+            isDarkMode ? 'border-pink-700 bg-gray-800' : 'border-pink-200'
+          }`}>
+            <CardHeader className={`border-b transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-pink-900/20 border-pink-700' 
+                : 'bg-pink-50 border-pink-200'
+            }`}>
+              <CardTitle className={`text-xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                SOL/USDT
+              </CardTitle>
               <div className="flex items-center gap-4">
                 <span className="text-2xl font-bold text-green-600">${currentPrice}</span>
                 <span className="text-green-600 text-sm">+2.45%</span>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 📊 Live from exchange servers • 🔒 Seemingly secure...
               </div>
             </CardHeader>
@@ -404,21 +497,41 @@ function CEXSecuritySimulationComponent() {
           </Card>
 
           {/* Security Warning Panel */}
-          <Card className="border-red-200 mt-6 tour-security-warning">
-            <CardHeader className="bg-red-50 border-b border-red-200">
-              <CardTitle className="text-lg text-gray-900">🚨 Security Risk Simulation</CardTitle>
+          <Card className={`mt-6 tour-security-warning transition-colors duration-300 ${
+            isDarkMode ? 'border-red-700 bg-gray-800' : 'border-red-200'
+          }`}>
+            <CardHeader className={`border-b transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-red-900/20 border-red-700' 
+                : 'bg-red-50 border-red-200'
+            }`}>
+              <CardTitle className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                🚨 Security Risk Simulation
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className={`border rounded-lg p-4 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-yellow-900/20 border-yellow-700' 
+                  : 'bg-yellow-50 border-yellow-200'
+              }`}>
                 <div className="flex items-start space-x-2">
                   <div className="text-yellow-600 text-lg">⚠️</div>
                   <div>
-                    <div className="font-semibold text-yellow-800">Educational Demo Alert</div>
-                    <div className="text-sm text-yellow-700 mt-1">
+                    <div className={`font-semibold ${
+                      isDarkMode ? 'text-yellow-400' : 'text-yellow-800'
+                    }`}>
+                      Educational Demo Alert
+                    </div>
+                    <div className={`text-sm mt-1 ${
+                      isDarkMode ? 'text-yellow-300' : 'text-yellow-700'
+                    }`}>
                       This simulation demonstrates how centralized exchanges can be compromised. 
                       Any trading action will trigger a security breach scenario showing fund drainage.
                     </div>
-                    <div className="text-xs text-yellow-600 mt-2 font-medium">
+                    <div className={`text-xs mt-2 font-medium ${
+                      isDarkMode ? 'text-yellow-400' : 'text-yellow-600'
+                    }`}>
                       🎓 Purpose: Learn about CEX risks • 💡 Takeaway: Self-custody importance
                     </div>
                   </div>
@@ -426,15 +539,27 @@ function CEXSecuritySimulationComponent() {
               </div>
               
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-red-900/20 border-red-700' 
+                    : 'bg-red-50 border-red-200'
+                }`}>
                   <div className="text-2xl font-bold text-red-600">$50,000</div>
                   <div className="text-sm text-red-600">At Risk</div>
-                  <div className="text-xs text-gray-600 mt-1">Your exchange balance</div>
+                  <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Your exchange balance
+                  </div>
                 </div>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-orange-900/20 border-orange-700' 
+                    : 'bg-orange-50 border-orange-200'
+                }`}>
                   <div className="text-2xl font-bold text-orange-600">0.5s</div>
                   <div className="text-sm text-orange-600">Drain Speed</div>
-                  <div className="text-xs text-gray-600 mt-1">$10K every half second</div>
+                  <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    $10K every half second
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -443,31 +568,47 @@ function CEXSecuritySimulationComponent() {
 
         {/* Trading Panel */}
         <div className="space-y-4">
-          <Card className="border-pink-200">
-            <CardHeader className="bg-pink-50 border-b border-pink-200">
-              <CardTitle>Trading Panel</CardTitle>
-              <p className="text-xs text-red-600">⚠️ Any order triggers security breach simulation</p>
+          <Card className={`transition-colors duration-300 ${
+            isDarkMode ? 'border-pink-700 bg-gray-800' : 'border-pink-200'
+          }`}>
+            <CardHeader className={`border-b transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-pink-900/20 border-pink-700' 
+                : 'bg-pink-50 border-pink-200'
+            }`}>
+              <CardTitle className={isDarkMode ? 'text-white' : 'text-black'}>
+                Trading Panel
+              </CardTitle>
+              <p className="text-xs text-red-400">
+                ⚠️ Any order triggers security breach simulation
+              </p>
             </CardHeader>
             <CardContent className="p-4">
               {/* Custom Tabs */}
               <div className="w-full mb-4 tour-trading-tabs">
-                <div className="flex border-b border-gray-200">
+                <div className={`flex border-b ${
+                  isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                }`}>
                   <button
                     onClick={() => setActiveTab('market')}
-                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 ${
+                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors duration-300 ${
                       activeTab === 'market'
-                        ? 'border-pink-500 text-pink-600 bg-pink-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        ? 'border-pink-500 text-pink-400 bg-pink-900/20'
+                        : isDarkMode 
+                          ? 'border-transparent text-gray-400 hover:text-gray-300'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     Market
                   </button>
                   <button
                     onClick={() => setActiveTab('limit')}
-                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 ${
+                    className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors duration-300 ${
                       activeTab === 'limit'
-                        ? 'border-pink-500 text-pink-600 bg-pink-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        ? 'border-pink-500 text-pink-400 bg-pink-900/20'
+                        : isDarkMode 
+                          ? 'border-transparent text-gray-400 hover:text-gray-300'
+                          : 'border-transparent text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     Limit
@@ -478,7 +619,9 @@ function CEXSecuritySimulationComponent() {
               {activeTab === 'market' && (
                 <div className="space-y-4">
                   <div className="tour-quantity-input">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
                       Quantity (SOL)
                     </label>
                     <input
@@ -486,9 +629,13 @@ function CEXSecuritySimulationComponent() {
                       placeholder="Enter amount (e.g., 10)"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-black'
+                      }`}
                     />
-                    <div className="text-xs text-orange-600 mt-1">
+                    <div className="text-xs text-orange-400 mt-1">
                       ⚡ Entering any amount will trigger the breach simulation
                     </div>
                   </div>
@@ -514,7 +661,9 @@ function CEXSecuritySimulationComponent() {
               {activeTab === 'limit' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
                       Price (USDT)
                     </label>
                     <input
@@ -522,11 +671,17 @@ function CEXSecuritySimulationComponent() {
                       placeholder="85.00"
                       value={limitPrice}
                       onChange={(e) => setLimitPrice(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-black'
+                      }`}
                     />
                   </div>
                   <div className="tour-quantity-input">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
                       Quantity (SOL)
                     </label>
                     <input
@@ -534,7 +689,11 @@ function CEXSecuritySimulationComponent() {
                       placeholder="Enter amount (e.g., 10)"
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-black'
+                      }`}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-2 tour-trade-buttons">
@@ -559,27 +718,43 @@ function CEXSecuritySimulationComponent() {
           </Card>
 
           {/* Recent Orders */}
-          <Card className="border-pink-200 tour-recent-orders">
-            <CardHeader className="bg-pink-50 border-b border-pink-200">
-              <CardTitle className="text-sm">Recent Orders</CardTitle>
+          <Card className={`tour-recent-orders transition-colors duration-300 ${
+            isDarkMode ? 'border-pink-700 bg-gray-800' : 'border-pink-200'
+          }`}>
+            <CardHeader className={`border-b transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-pink-900/20 border-pink-700' 
+                : 'bg-pink-50 border-pink-200'
+            }`}>
+              <CardTitle className={`text-sm ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                Recent Orders
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {orders.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No recent orders</p>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    No recent orders
+                  </p>
                 ) : (
                   orders.map((order) => (
-                    <div key={order.id} className="text-xs bg-gray-50 p-2 rounded border-l-4 border-red-400">
+                    <div key={order.id} className={`text-xs p-2 rounded border-l-4 border-red-400 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
                       <div className="flex justify-between">
                         <span className={order.type === 'buy' ? 'text-green-600' : 'text-red-600'}>
                           {order.type.toUpperCase()} {order.orderType}
                         </span>
-                        <span>{order.quantity} SOL</span>
+                        <span className={isDarkMode ? 'text-white' : 'text-black'}>
+                          {order.quantity} SOL
+                        </span>
                       </div>
                       {order.price && (
-                        <div className="text-gray-600">@ ${order.price.toFixed(2)}</div>
+                        <div className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+                          @ ${order.price.toFixed(2)}
+                        </div>
                       )}
-                      <div className="text-red-600 text-xs mt-1">
+                      <div className="text-red-400 text-xs mt-1">
                         ⚠️ Triggered security breach
                       </div>
                     </div>
@@ -600,20 +775,28 @@ function CEXSecuritySimulationComponent() {
             exit={{ opacity: 0, scale: 0.8, y: -20 }}
             className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50"
           >
-            <div className="w-80 border border-red-400 bg-red-50 rounded-lg shadow-lg">
+            <div className={`w-80 border border-red-400 rounded-lg shadow-lg transition-colors duration-300 ${
+              isDarkMode ? 'bg-red-900/20' : 'bg-red-50'
+            }`}>
               <div className="p-4">
                 <div className="flex items-center space-x-2">
                   <div className="text-red-600">🔓</div>
                   <div className="flex-1">
-                    <p className="font-bold text-red-800">Security Breach Detected</p>
-                    <p className="text-sm text-red-700">Unauthorized access detected...</p>
-                    <div className="mt-2 w-full bg-red-200 rounded-full h-2">
+                    <p className={`font-bold ${isDarkMode ? 'text-red-400' : 'text-red-800'}`}>
+                      Security Breach Detected
+                    </p>
+                    <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
+                      Unauthorized access detected...
+                    </p>
+                    <div className={`mt-2 w-full rounded-full h-2 ${
+                      isDarkMode ? 'bg-red-800' : 'bg-red-200'
+                    }`}>
                       <div 
                         className="bg-red-600 h-2 rounded-full transition-all duration-500"
                         style={{ width: `${100 - (balance / 500)}%` }}
                       ></div>
                     </div>
-                    <div className="text-xs text-red-600 mt-1">
+                    <div className="text-xs text-red-400 mt-1">
                       Funds draining: ${(50000 - balance).toLocaleString()} stolen
                     </div>
                   </div>
@@ -633,13 +816,19 @@ function CEXSecuritySimulationComponent() {
             exit={{ opacity: 0, scale: 0.8, x: 20 }}
             className="fixed top-4 right-4 z-50"
           >
-            <div className="w-64 border border-orange-400 bg-orange-50 rounded-lg shadow-lg">
+            <div className={`w-64 border border-orange-400 rounded-lg shadow-lg transition-colors duration-300 ${
+              isDarkMode ? 'bg-orange-900/20' : 'bg-orange-50'
+            }`}>
               <div className="p-3">
                 <div className="flex items-center space-x-2">
                   <div className="text-orange-600">⚠️</div>
                   <div>
-                    <p className="font-bold text-orange-800">All Funds Drained</p>
-                    <p className="text-sm text-orange-700">Exchange completely compromised</p>
+                    <p className={`font-bold ${isDarkMode ? 'text-orange-400' : 'text-orange-800'}`}>
+                      All Funds Drained
+                    </p>
+                    <p className={`text-sm ${isDarkMode ? 'text-orange-300' : 'text-orange-700'}`}>
+                      Exchange completely compromised
+                    </p>
                   </div>
                 </div>
               </div>
@@ -656,16 +845,26 @@ function CEXSecuritySimulationComponent() {
             animate={{ opacity: 1 }}
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           >
-            <div className="max-w-md border border-red-400 bg-white rounded-lg shadow-xl">
+            <div className={`max-w-md border border-red-400 rounded-lg shadow-xl transition-colors duration-300 ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
               <div className="p-6 text-center">
                 <div className="text-4xl mb-4">💥</div>
-                <h2 className="text-xl font-bold text-red-800 mb-2">Exchange Hacked!</h2>
-                <p className="text-gray-700 mb-4">
+                <h2 className={`text-xl font-bold text-red-600 mb-2`}>
+                  Exchange Hacked!
+                </h2>
+                <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Your exchange has been compromised. All $50,000 has been drained. 
                   This demonstrates why <strong>self-custody</strong> is crucial.
                 </p>
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4">
-                  <div className="text-sm text-yellow-800">
+                <div className={`border rounded p-3 mb-4 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-yellow-900/20 border-yellow-700' 
+                    : 'bg-yellow-50 border-yellow-200'
+                }`}>
+                  <div className={`text-sm ${
+                    isDarkMode ? 'text-yellow-300' : 'text-yellow-800'
+                  }`}>
                     <strong>🎓 Learning Moment:</strong> This simulation shows real CEX risks. 
                     Always use hardware wallets for large amounts!
                   </div>
